@@ -6,10 +6,11 @@ from hashlib import sha256
 from src.config.globals import BINGX_API_URL
 
 
-class BingxBase:
+class APIBase:
     
     
     def __init__(self, api_key: str, api_secret: str):
+        self.api_url = BINGX_API_URL
         self.api_key = api_key
         self.api_secret = api_secret
         self.headers = {
@@ -30,5 +31,5 @@ class BingxBase:
 
     def gen_url(self, path: str, urlpa: str={}):
         urlpa = self.parseParam(urlpa)
-        url = "%s%s?%s&signature=%s" % (BINGX_API_URL, path, urlpa, self.get_sign(self.api_secret, urlpa))
+        url = "%s%s?%s&signature=%s" % (self.api_url, path, urlpa, self.get_sign(self.api_secret, urlpa))
         return url

@@ -5,7 +5,8 @@
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/src/main.py",
-            "python": "${workspaceFolder}/crypto-venv/Scripts/python.exe",
+            // "python": "${workspaceFolder}/crypto-venv/Scripts/python.exe",
+            "python": "${workspaceFolder}/crypto-venv/bin/python",
             "cwd": "${workspaceFolder}",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}"

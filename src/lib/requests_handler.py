@@ -41,7 +41,7 @@ class RequestsHandler:
 
     @log_info
     @staticmethod
-    def get(url: str, headers: dict = None) -> ResponseHandler.process:
+    def get(url: str, headers: dict = None, params: dict = None) -> ResponseHandler.process:
         return ResponseHandler.process(requests.get(url, headers=headers))
 
     @log_info

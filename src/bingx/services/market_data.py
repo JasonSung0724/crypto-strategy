@@ -1,0 +1,45 @@
+from loguru import logger
+from src.bingx.restful.factory import Bingx
+import heapq
+
+
+class MarketData:
+    def __init__(self, api_key: str, api_secret: str):
+        self.bing = Bingx(api_key=api_key, api_secret=api_secret)
+        self.fluctuations_list = None
+
+    def get_all_fluctuations(self):
+        res = self.bing.market.change_24h()
+        data = {item["symbol"]: float(item["priceChangePercent"]) for item in res["data"]["data"]}
+        self.fluctuations_list = data
+        return data
+
+    def get_top_fluctuations(self, top_n: int=10):
+        self.get_all_fluctuations()
+        rise_heap = []
+        fall_heap = []
+
+        for k, v in self.fluctuations_list.items():
+            if 0 < v < 1000:
+                if len(rise_heap) < top_n:
+                    heapq.heappush(rise_heap, (v, k))
+                else:
+                    heapq.heappushpop(rise_heap, (v, k))
+            elif -90 < v < 0:
+                abs_drop = -v
+                if len(fall_heap) < top_n:
+                    heapq.heappush(fall_heap, (abs_drop, k))
+                else:
+                    heapq.heappushpop(fall_heap, (abs_drop, k))
+
+        rise_top = [(k, v) for v, k in sorted(rise_heap, reverse=True)]
+        fall_top = [(k, -v) for v, k in sorted(fall_heap, reverse=True)]
+        return rise_top, fall_top
+
+    def get_kline(self, symbol: str, interval: str, limit: int=100):
+        support_interval = ["1m", "3m", "5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "1d", "3d", "1w", "1M"]
+        if interval not in support_interval:
+            logger.error(f"Unsupported interval: {interval}")
+            raise ValueError(f"Unsupported interval: {interval}")
+        res = self.bing.market.kline(symbol=symbol, interval=interval, limit=limit)
+        return res
