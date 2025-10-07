@@ -1,6 +1,8 @@
 from loguru import logger
 from src.bingx.restful.factory import Bingx
 import heapq
+import pandas as pd
+import numpy as np
 
 
 class MarketData:
@@ -36,10 +38,20 @@ class MarketData:
         fall_top = [(k, -v) for v, k in sorted(fall_heap, reverse=True)]
         return rise_top, fall_top
 
-    def get_kline(self, symbol: str, interval: str, limit: int=100):
+    def get_kline(self, symbol: str, interval: str, limit: int=100) -> pd.DataFrame:
         support_interval = ["1m", "3m", "5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "1d", "3d", "1w", "1M"]
         if interval not in support_interval:
             logger.error(f"Unsupported interval: {interval}")
             raise ValueError(f"Unsupported interval: {interval}")
         res = self.bing.market.kline(symbol=symbol, interval=interval, limit=limit)
-        return res
+        data = res["data"]
+        if "data" in data and data["code"] == 0:
+            kline = pd.DataFrame(data["data"])
+            kline["symbol"] = symbol
+            kline["interval"] = interval
+            kline["time"] = pd.to_datetime(kline["time"], unit="ms", utc=True)
+            kline = kline.sort_values("time").set_index("time")
+            return kline.reset_index()
+        else:
+            logger.error(f"\nFailed to get kline\nCode :{res['code']}\nMessage :{res['msg']}")
+            raise ValueError(f"\nFailed to get kline\nCode :{res['code']}\nMessage :{res['msg']}")

@@ -7,6 +7,8 @@ from asyncio import Queue
 from src.bingx.restful.factory import Bingx
 from src.bingx.services.market_data import MarketData
 from src.bingx.services.analysis import Analyzer
+import pandas as pd
+from src.lib.chart import plot_timeseries
 
 logger.remove()
 logger.add(
@@ -32,13 +34,13 @@ BINGX_API_SECRET = os.getenv("BINGX_API_SECRET")
 
 def main():
     market_data = MarketData(api_key=BINGX_API_KEY, api_secret=BINGX_API_SECRET)
-    rise, fall = market_data.get_top_fluctuations() 
-    for symbol, _ in rise:
-        analyzer = Analyzer(symbol=symbol, market_data=market_data)
-        analyzer.analysis()
-    for symbol, _ in fall:
-        analyzer = Analyzer(symbol=symbol, market_data=market_data)
-        analyzer.analysis()
+    analyzer = Analyzer(symbol="DOOD-USDT", market_data=market_data)
+    for k, df in analyzer.data_collection().items():
+        df = analyzer.extend_indicator(df)
+        analyzer.data[k] = df
+    plot_timeseries(df=analyzer.data["1h"], y_cols=["upper_shadow_pct", "lower_shadow_pct"], time_col="time", title="DOOD-USDT Shadow Percentage")
+
 
 if __name__ == "__main__":
     main()
+
