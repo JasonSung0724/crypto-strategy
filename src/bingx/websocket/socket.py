@@ -15,17 +15,18 @@ URL = BINGX_SOCKET_URL + swap_path
 
 class MarketSocket(BingxSocketBase):
     
-    def __init__(self, queue: Queue):
+    def __init__(self, queue: Queue, channels: list[str]):
         self.ws = None
         self.msg_queue = queue
+        self.channels = channels
         super().__init__()
         self.start_time = time.time()
-        
+
     async def start(self):
         async with websockets.connect(URL) as ws:
             self.ws = ws
             logger.info("Connected to the socket")
-            await self.subscribe(channel="SOL-USDT@depth100@500ms")
+            await self.subscribe(channels=self.channels)
             while True:
                 recv = await self.ws.recv()
                 message = await self.on_message(recv)
