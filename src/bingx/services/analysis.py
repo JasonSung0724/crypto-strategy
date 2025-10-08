@@ -5,13 +5,14 @@ from src.bingx.restful.factory import Bingx
 import pandas as pd
 import numpy as np
 
+
 class Analyzer:
 
-    def __init__(self, symbol: str, market_data: MarketData):
+    def __init__(self, market_data: MarketData, symbol: str = None):
         self.symbol = symbol
         self.market_data = market_data
         self.data = None
-    
+
     def data_collection(self):
         k1m = self.market_data.get_kline(symbol=self.symbol, interval="1m", limit=1440)
         k5m = self.market_data.get_kline(symbol=self.symbol, interval="5m", limit=288)
@@ -23,19 +24,18 @@ class Analyzer:
 
     def analysis(self, data: pd.DataFrame):
         pass
-        
+
     def extend_indicator(self, data: pd.DataFrame):
         self.moving_average(data)
         self.fluctuation_rate(data)
         self.shadow_pct(data)
         return data
-    
 
-    def moving_average(self, kline: pd.DataFrame, period: list[int] = [6, 24, 48]):
+    def moving_average(self, kline: pd.DataFrame, period: list[int] = [6, 48, 180]):
         for p in period:
             kline[f"{p}MA"] = kline["close"].rolling(window=p).mean().round(4)
         return kline
-    
+
     def fluctuation_rate(self, kline: pd.DataFrame, avg_period: int = 24):
         cols = ["high", "low", "close", "open"]
         kline[cols] = kline[cols].apply(pd.to_numeric, errors="coerce")
@@ -44,7 +44,7 @@ class Analyzer:
         kline["max_fluc_pct"] = np.maximum(up, down.abs()).round(4)
         kline["avg_fluc_pct"] = kline["max_fluc_pct"].rolling(window=avg_period).mean().round(4)
         return kline
-    
+
     def shadow_pct(self, kline: pd.DataFrame):
         cols = ["high", "low", "close", "open"]
         kline[cols] = kline[cols].apply(pd.to_numeric, errors="coerce")

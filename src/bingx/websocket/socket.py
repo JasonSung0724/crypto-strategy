@@ -1,4 +1,3 @@
-
 import json
 import websockets
 import gzip
@@ -14,7 +13,7 @@ URL = BINGX_SOCKET_URL + swap_path
 
 
 class MarketSocket(BingxSocketBase):
-    
+
     def __init__(self, queue: Queue, channels: list[str]):
         self.ws = None
         self.msg_queue = queue
