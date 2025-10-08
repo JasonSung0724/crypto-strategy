@@ -5,6 +5,7 @@ import io
 from src.bingx.websocket.socket_base import BingxSocketBase
 from src.config.globals import BINGX_SOCKET_URL
 from loguru import logger
+from websockets.exceptions import ConnectionClosedError
 import time
 from asyncio import Queue
 
@@ -22,14 +23,18 @@ class MarketSocket(BingxSocketBase):
         self.start_time = time.time()
 
     async def start(self):
-        async with websockets.connect(URL) as ws:
-            self.ws = ws
-            logger.info("Connected to the socket")
-            await self.subscribe(channels=self.channels)
-            while True:
-                recv = await self.ws.recv()
-                message = await self.on_message(recv)
-                if message == "Ping":
-                    await self.pong(self.ws)
-                else:
-                    await self.msg_queue.put(message)
+        try:
+            async with websockets.connect(URL) as ws:
+                self.ws = ws
+                logger.info("Connected to the socket")
+                await self.subscribe(channels=self.channels)
+                while True:
+                    recv = await self.ws.recv()
+                    message = await self.on_message(recv)
+                    if message == "Ping":
+                        await self.pong(self.ws)
+                    else:
+                        await self.msg_queue.put(message)
+        except (ConnectionClosedError, TimeoutError) as e:
+            logger.error(f"Connection closed: {e}")
+            await self.start()

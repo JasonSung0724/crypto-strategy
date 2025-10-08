@@ -16,12 +16,23 @@ from datetime import datetime
 from src.strategy.real_time_monitor import RealTimeMonitor
 
 logger.remove()
+log_format = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
 logger.add(
+
     sink=lambda msg: print(msg, end=""),
     level="INFO",
-    format="<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+    format=log_format,
     colorize=True,
     serialize=False,
+)
+
+logger.add(
+    "./logs/main.log",
+    level="WARNING",
+    format=log_format,
+    rotation="1 day",
+    retention="7 days",
+    compression="zip",
 )
 
 load_dotenv()
@@ -32,7 +43,7 @@ BINGX_API_SECRET = os.getenv("BINGX_API_SECRET")
 
 async def main():
     strategy = RealTimeMonitor(market_data=MarketData(api_key=BINGX_API_KEY, api_secret=BINGX_API_SECRET))
-    tasks = await strategy.tasks_setup()
+    tasks = await strategy.tasks_setup(kline_interval="15m")
 
     await asyncio.gather(*tasks)
 
@@ -43,8 +54,10 @@ if __name__ == "__main__":
 
 # def main():
 #     market = MarketData(api_key=BINGX_API_KEY, api_secret=BINGX_API_SECRET)
-#     kline = market.get_kline(symbol="BTC-USDT", interval="5m", limit=10)
-#     logger.info(kline)
+#     kline = market.get_kline(symbol="BTC-USDT", interval="15m", limit=672)
+#     logger.info(pd.to_datetime(kline.iloc[0]["time"], unit="ms"))
+#     kline = kline.drop(index=0, inplace=True)
+
 
 
 # if __name__ == "__main__":
