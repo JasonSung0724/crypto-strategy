@@ -34,16 +34,18 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 
 async def main():
-    notification = TelegramNotification(token=TELEGRAM_BOT_TOKEN, chat_id="-1003146797346")
-    notification.send_message(message="Start monitoring")
-    market = MarketData(api_key=BINGX_API_KEY, api_secret=BINGX_API_SECRET)
-    strategy = RealTimeMonitor(market_data=market, notification=notification)
-    tasks = await strategy.tasks_setup(kline_interval="15m")
+    try:
+        notification = TelegramNotification(token=TELEGRAM_BOT_TOKEN, chat_id="-1003146797346")
+        notification.send_message(message="Start monitoring")
+        market = MarketData(api_key=BINGX_API_KEY, api_secret=BINGX_API_SECRET)
+        strategy = RealTimeMonitor(market_data=market, notification=notification)
+        tasks = await strategy.tasks_setup(kline_interval="15m")
 
-    await asyncio.gather(*tasks)
+        await asyncio.gather(*tasks)
 
-    logger.error("Monitoring shutdown")
-    notification.send_message(message="Start monitoring")
+    except Exception as e:
+        logger.error(f"Monitoring shutdown: {e}")
+        notification.send_message(message="Start monitoring")
 
 
 if __name__ == "__main__":
