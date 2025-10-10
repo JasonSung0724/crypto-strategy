@@ -31,9 +31,15 @@ class RealTimeMonitor:
 
     async def notification_handler(self):
         while True:
-            message = await self.notification_queue.get()
-            self.notification.send_message(message=message)
-            await asyncio.sleep(0)
+            buffer = []
+            await asyncio.sleep(10)
+
+            while not self.notification_queue.empty():
+                message = await self.notification_queue.get()
+                buffer.append(message)
+
+            if buffer:
+                self.notification.send_message(message="\n".join(buffer))
 
     async def kline_data_recv(self, data):
         limit = {"1m": 1440, "5m": 288, "15m": 288, "1d": 7}
@@ -78,7 +84,7 @@ class RealTimeMonitor:
             trigger = True
             await self.notification_queue.put(f"MA crossover: {kline.iloc[-1]['symbol']}")
 
-        if volume > avg_volume * 2:
+        if volume > avg_volume * 3:
             logger.warning(f"Fast volume change: {kline.iloc[-1]['symbol']} ({volume/avg_volume*100}%)")
             trigger = True
             await self.notification_queue.put(
