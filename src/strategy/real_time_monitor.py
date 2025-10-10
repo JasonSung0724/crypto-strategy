@@ -30,6 +30,7 @@ class RealTimeMonitor:
         while True:
             message = await self.notification_queue.get()
             self.notification.send_message(message=message)
+            await asyncio.sleep(0)
 
     async def kline_data_recv(self, data):
         limit = {"1m": 1440, "5m": 288, "15m": 288, "1d": 7}
@@ -61,12 +62,8 @@ class RealTimeMonitor:
         price_change = kline.iloc[-1]["price_change"]
         avg_fluc_pct = kline.iloc[-1]["avg_fluc_pct"]
         max_fluc_pct = kline.iloc[-1]["max_fluc_pct"]
-        if abs(price_change) > avg_fluc_pct and not notified:
-            logger.warning(f"Price change: {kline.iloc[-1]['symbol']} ({price_change*100}%)")
-            kline.at[kline.index[-1], "notified"] = True
-            await self.notification_queue.put(f"Price change: {kline.iloc[-1]['symbol']} ({price_change*100}%)")
 
-        if abs(price_change) > max_fluc_pct * 2:
+        if abs(price_change) > max_fluc_pct * 2 and not notified:
             logger.warning(f"Fast price change: {kline.iloc[-1]['symbol']} ({price_change*100}%)")
             kline.at[kline.index[-1], "notified"] = True
             await self.notification_queue.put(f"Fast price change: {kline.iloc[-1]['symbol']} ({price_change*100}%)")
@@ -77,6 +74,8 @@ class RealTimeMonitor:
         limit = 200
         length = len(self.symbols)
         tasks = [self.msg_handler.start()]
+        if self.notification:
+            tasks.append(self.notification_handler())
         for i in range(0, length, limit):
             channels_list.append(self.symbols[i : i + limit])
         for channels in channels_list:
