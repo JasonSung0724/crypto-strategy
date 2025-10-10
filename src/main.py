@@ -14,7 +14,8 @@ from pathlib import Path
 import numpy as np
 from datetime import datetime
 from src.strategy.real_time_monitor import RealTimeMonitor
-import threading
+from src.lib.notification import TelegramNotification
+
 
 logger.remove()
 log_format = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
@@ -39,10 +40,13 @@ load_dotenv()
 
 BINGX_API_KEY = os.getenv("BINGX_API_KEY")
 BINGX_API_SECRET = os.getenv("BINGX_API_SECRET")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 
 async def main():
-    strategy = RealTimeMonitor(market_data=MarketData(api_key=BINGX_API_KEY, api_secret=BINGX_API_SECRET))
+    notification = TelegramNotification(token=TELEGRAM_BOT_TOKEN, chat_id="-1003146797346")
+    market = MarketData(api_key=BINGX_API_KEY, api_secret=BINGX_API_SECRET)
+    strategy = RealTimeMonitor(market_data=market, notification=notification)
     tasks = await strategy.tasks_setup(kline_interval="15m")
 
     await asyncio.gather(*tasks)
@@ -53,10 +57,9 @@ if __name__ == "__main__":
 
 
 # def main():
-#     market = MarketData(api_key=BINGX_API_KEY, api_secret=BINGX_API_SECRET)
-#     kline = market.get_kline(symbol="BTC-USDT", interval="15m", limit=672)
-#     logger.info(pd.to_datetime(kline.iloc[0]["time"], unit="ms"))
-#     kline = kline.drop(index=0, inplace=True)
+#     telegram = TelegramNotification(token=TELEGRAM_BOT_TOKEN)
+#     res = telegram.send_message(chat_id="-1003146797346", message="Hello, World!")
+#     logger.info(res)
 
 
 # if __name__ == "__main__":
