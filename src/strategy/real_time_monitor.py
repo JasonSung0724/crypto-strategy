@@ -21,10 +21,13 @@ class RealTimeMonitor:
             self.symbols = list(self.market_data.get_all_fluctuations().keys())
         else:
             self.symbols = symbols
+        self.long_time = 96
+        self.short_time = 48
         self.kline_data: dict[str, pd.DataFrame] = {symbol: None for symbol in self.symbols}
-        self.indicator = {"moving_average": [48, 96], "fluctuation_rate": 96, "shadow_pct": []}
+        self.indicator = {"moving_average": [self.short_time, self.long_time], "fluctuation_rate": self.long_time, "shadow_pct": []}
         self.notification_queue = Queue()
         self.notification = notification
+        self.kline_interval = None
 
     async def notification_handler(self):
         while True:
@@ -58,15 +61,37 @@ class RealTimeMonitor:
         await self.strategy_analysis(df)
 
     async def strategy_analysis(self, kline: pd.DataFrame):
-        notified = kline.iloc[-1]["notified"]
-        price_change = kline.iloc[-1]["price_change"]
-        avg_fluc_pct = kline.iloc[-1]["avg_fluc_pct"]
-        max_fluc_pct = kline.iloc[-1]["max_fluc_pct"]
+        trigger = False
+        notified = bool(kline.iloc[-1]["notified"])
+        price_change = float(kline.iloc[-1]["price_change"])
+        avg_fluc_pct = float(kline.iloc[-1]["avg_fluc_pct"])
+        max_fluc_pct = float(kline.iloc[-1]["max_fluc_pct"])
+        volume = max(float(kline.iloc[-1]["volume"]), float(kline.iloc[-2]["volume"]))
+        avg_volume = float(kline.iloc[-1]["avg_volume"])
+        long_ma = float(kline.iloc[-1][f"{self.long_time}MA"])
+        short_ma = float(kline.iloc[-1][f"{self.short_time}MA"])
+        pre_long_ma = float(kline.iloc[-2][f"{self.long_time}MA"])
+        pre_short_ma = float(kline.iloc[-2][f"{self.short_time}MA"])
 
-        if abs(price_change) > max_fluc_pct * 2 and not notified:
+        if (long_ma > short_ma and pre_long_ma < pre_short_ma) or (long_ma < short_ma and pre_long_ma > pre_short_ma):
+            logger.warning(f"MA crossover: {kline.iloc[-1]['symbol']}")
+            trigger = True
+            await self.notification_queue.put(f"MA crossover: {kline.iloc[-1]['symbol']}")
+
+        if volume > avg_volume * 2:
+            logger.warning(f"Fast volume change: {kline.iloc[-1]['symbol']} ({volume/avg_volume*100}%)")
+            trigger = True
+            await self.notification_queue.put(
+                f"Fast volume change: {kline.iloc[-1]['symbol']} ({round(((volume/avg_volume)*100), 2)}%)\n Average: {avg_volume}, Current: {volume}"
+            )
+
+        if abs(price_change) > avg_fluc_pct * 2 and abs(price_change) > max_fluc_pct and not notified:
             logger.warning(f"Fast price change: {kline.iloc[-1]['symbol']} ({price_change*100}%)")
+            trigger = True
+            await self.notification_queue.put(f"Fast price change: {kline.iloc[-1]['symbol']} ({round((price_change*100), 2)}%) within {self.kline_interval}")
+
+        if trigger:
             kline.at[kline.index[-1], "notified"] = True
-            await self.notification_queue.put(f"Fast price change: {kline.iloc[-1]['symbol']} ({price_change*100}%)")
 
     async def tasks_setup(self, kline_interval: str = "15m"):
         self.kline_interval = kline_interval

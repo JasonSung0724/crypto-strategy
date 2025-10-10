@@ -58,6 +58,7 @@ class Analyzer:
         kline["price_change"] = ((kline["close"] - kline["open"]) / kline["open"]).round(4)
         kline["max_fluc_pct"] = np.maximum(up, down.abs()).round(4)
         kline["avg_fluc_pct"] = kline["max_fluc_pct"].rolling(window=avg_period).mean().round(4)
+        kline["avg_volume"] = kline["volume"].rolling(window=avg_period).mean().round(4)
         return kline
 
     def shadow_pct(self, kline: pd.DataFrame) -> pd.DataFrame:
