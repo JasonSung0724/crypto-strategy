@@ -53,6 +53,8 @@ class Analyzer:
         kline[cols] = kline[cols].apply(pd.to_numeric, errors="coerce")
         up = (kline["high"] - kline["open"]) / kline["open"]
         down = (kline["low"] - kline["open"]) / kline["open"]
+        kline["highest_price"] = kline["high"].max()
+        kline["lowest_price"] = kline["low"].min()
         kline["price_change"] = ((kline["close"] - kline["open"]) / kline["open"]).round(4)
         kline["max_fluc_pct"] = np.maximum(up, down.abs()).round(4)
         kline["avg_fluc_pct"] = kline["max_fluc_pct"].rolling(window=avg_period).mean().round(4)

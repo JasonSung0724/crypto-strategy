@@ -1,4 +1,5 @@
 from asyncio import Queue
+import asyncio
 from loguru import logger
 from src.bingx.services.market_data import MarketData
 from src.bingx.websocket.message_handle import MessageHandle
@@ -15,7 +16,7 @@ class RealTimeMonitor:
         self.msg_handler = MessageHandle(self)
         self.market_data = market_data
         if symbols == ["ALL"]:
-            self.symbols = list(self.market_data.get_all_fluctuations().keys())[:1]
+            self.symbols = list(self.market_data.get_all_fluctuations().keys())
         else:
             self.symbols = symbols
         self.kline_data: dict[str, pd.DataFrame] = {symbol: None for symbol in self.symbols}
@@ -51,7 +52,7 @@ class RealTimeMonitor:
         price_change = kline.iloc[-1]["price_change"]
         avg_fluc_pct = kline.iloc[-1]["avg_fluc_pct"]
         max_fluc_pct = kline.iloc[-1]["max_fluc_pct"]
-        if abs(price_change) < avg_fluc_pct and not notified:
+        if abs(price_change) > avg_fluc_pct and not notified:
             logger.warning(f"Price change: {kline.iloc[-1]['symbol']} ({price_change*100}%)")
             kline.at[kline.index[-1], "notified"] = True
 
@@ -70,5 +71,5 @@ class RealTimeMonitor:
         for channels in channels_list:
             channels = [f"{channel}@kline_{kline_interval}" for channel in channels]
             market_socket = MarketSocket(queue=self.queue, channels=channels)
-            tasks.append(market_socket.start())
+            tasks.extend(market_socket.start())
         return tasks

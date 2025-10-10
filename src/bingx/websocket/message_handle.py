@@ -3,6 +3,7 @@ from loguru import logger
 import pandas as pd
 from src.bingx.services.market_data import MarketData
 import json
+import asyncio
 
 
 class MessageHandle:
@@ -22,3 +23,4 @@ class MessageHandle:
         while True:
             message = await self.strategy.queue.get()
             await self.handler(json.loads(message))
+            await asyncio.sleep(0)

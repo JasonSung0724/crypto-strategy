@@ -35,6 +35,3 @@ class BingxSocketBase:
         format = {"id": subscribed_id, "reqType": "unsub", "dataType": channel}
         await self.ws.send(json.dumps(format))
         self.subscribed_channels.pop(channel)
-
-    async def pong(self, ws):
-        await ws.send("Pong")
