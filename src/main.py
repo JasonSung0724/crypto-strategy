@@ -42,6 +42,9 @@ async def main():
 
     await asyncio.gather(*tasks)
 
+    logger.error("Monitoring shutdown")
+    notification.send_message(message="Start monitoring")
+
 
 if __name__ == "__main__":
     asyncio.run(main())
