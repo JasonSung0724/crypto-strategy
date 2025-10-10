@@ -79,12 +79,12 @@ class RealTimeMonitor:
         pre_long_ma = float(kline.iloc[-2][f"{self.long_time}MA"])
         pre_short_ma = float(kline.iloc[-2][f"{self.short_time}MA"])
 
-        if (long_ma > short_ma and pre_long_ma < pre_short_ma) or (long_ma < short_ma and pre_long_ma > pre_short_ma):
+        if (long_ma > short_ma and pre_long_ma < pre_short_ma) or (long_ma < short_ma and pre_long_ma > pre_short_ma) and not notified:
             logger.warning(f"MA crossover: {kline.iloc[-1]['symbol']}")
             trigger = True
             await self.notification_queue.put(f"MA crossover: {kline.iloc[-1]['symbol']}")
 
-        if volume > avg_volume * 3:
+        if volume > avg_volume * 3 and not notified:
             logger.warning(f"Fast volume change: {kline.iloc[-1]['symbol']} ({volume/avg_volume*100}%)")
             trigger = True
             await self.notification_queue.put(
