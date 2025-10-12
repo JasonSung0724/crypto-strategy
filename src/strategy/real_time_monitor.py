@@ -104,12 +104,12 @@ class RealTimeMonitor:
                     f"Rapid price retracement: {kline.iloc[-1]['symbol']} within {self.kline_interval} ({round(((lower_shadow_pct)*100), 2)}%)"
                 )
 
-            if (current_price * 1.02) > upper_band:
+            if current_price > (upper_band * 1.02):
                 logger.warning(f"Price above upper band: {kline.iloc[-1]['symbol']}")
                 trigger = True
                 await self.notification_queue.put(f"Price above upper band: {kline.iloc[-1]['symbol']}")
 
-            if (current_price * 0.98) < lower_band:
+            if current_price < (lower_band * 0.98):
                 logger.warning(f"Price below lower band: {kline.iloc[-1]['symbol']}")
                 trigger = True
                 await self.notification_queue.put(f"Price below lower band: {kline.iloc[-1]['symbol']}")
