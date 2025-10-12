@@ -1,5 +1,6 @@
 from asyncio import Queue
 import asyncio
+from symtable import Symbol
 from loguru import logger
 from src.bingx.services.market_data import MarketData
 from src.bingx.websocket.message_handle import MessageHandle
@@ -23,7 +24,12 @@ class RealTimeMonitor:
         self.long_time = 96
         self.short_time = 48
         self.kline_data: dict[str, pd.DataFrame] = {symbol: None for symbol in self.symbols}
-        self.indicator = {"moving_average": [self.short_time, self.long_time], "fluctuation_rate": self.long_time, "shadow_pct": []}
+        self.indicator = {
+            "moving_average": [self.short_time, self.long_time],
+            "fluctuation_rate": self.long_time,
+            "shadow_pct": [],
+            "boolinger_band": self.short_time,
+        }
         self.notification_queue = Queue()
         self.notification = notification
         self.kline_interval = None
@@ -67,6 +73,7 @@ class RealTimeMonitor:
 
     async def strategy_analysis(self, kline: pd.DataFrame):
         trigger = False
+        current_price = float(kline.iloc[-1]["close"])
         notified = bool(kline.iloc[-1]["notified"])
         price_change = float(kline.iloc[-1]["price_change"])
         avg_fluc_pct = float(kline.iloc[-1]["avg_fluc_pct"])
@@ -77,12 +84,35 @@ class RealTimeMonitor:
         short_ma = float(kline.iloc[-1][f"{self.short_time}MA"])
         pre_long_ma = float(kline.iloc[-2][f"{self.long_time}MA"])
         pre_short_ma = float(kline.iloc[-2][f"{self.short_time}MA"])
+        upper_band = float(kline.iloc[-1]["upper_band"])
+        lower_band = float(kline.iloc[-1]["lower_band"])
+        upper_shadow_pct = float(kline.iloc[-1]["upper_shadow_pct"])
+        lower_shadow_pct = float(kline.iloc[-1]["lower_shadow_pct"])
 
         if not notified:
-            if (long_ma > short_ma and pre_long_ma < pre_short_ma) or (long_ma < short_ma and pre_long_ma > pre_short_ma):
-                logger.warning(f"MA crossover: {kline.iloc[-1]['symbol']}")
+
+            if upper_shadow_pct > 0.5:
+                logger.warning(f"Rapid price retracement: {kline.iloc[-1]['symbol']} within {self.kline_interval} ({round((upper_shadow_pct*100), 2)}%)")
                 trigger = True
-                await self.notification_queue.put(f"MA crossover: {kline.iloc[-1]['symbol']}")
+                await self.notification_queue.put(
+                    f"Rapid price retracement: {kline.iloc[-1]['symbol']} within {self.kline_interval} ({round(((upper_shadow_pct)*100), 2)}%)"
+                )
+            if lower_shadow_pct > 0.5:
+                logger.warning(f"Rapid price retracement: {kline.iloc[-1]['symbol']} within {self.kline_interval} ({round((lower_shadow_pct*100), 2)}%)")
+                trigger = True
+                await self.notification_queue.put(
+                    f"Rapid price retracement: {kline.iloc[-1]['symbol']} within {self.kline_interval} ({round(((lower_shadow_pct)*100), 2)}%)"
+                )
+
+            if current_price > upper_band:
+                logger.warning(f"Price above upper band: {kline.iloc[-1]['symbol']}")
+                trigger = True
+                await self.notification_queue.put(f"Price above upper band: {kline.iloc[-1]['symbol']}")
+
+            if current_price < lower_band:
+                logger.warning(f"Price below lower band: {kline.iloc[-1]['symbol']}")
+                trigger = True
+                await self.notification_queue.put(f"Price below lower band: {kline.iloc[-1]['symbol']}")
 
             if volume > avg_volume * 3:
                 logger.warning(f"Fast volume change: {kline.iloc[-1]['symbol']} ({volume/avg_volume*100}%)")
@@ -97,6 +127,11 @@ class RealTimeMonitor:
                 await self.notification_queue.put(
                     f"Fast price change: {kline.iloc[-1]['symbol']} ({round((price_change*100), 2)}%) within {self.kline_interval}"
                 )
+
+            if (long_ma > short_ma and pre_long_ma < pre_short_ma) or (long_ma < short_ma and pre_long_ma > pre_short_ma):
+                logger.warning(f"MA crossover: {kline.iloc[-1]['symbol']}")
+                trigger = True
+                await self.notification_queue.put(f"MA crossover: {kline.iloc[-1]['symbol']}")
 
         if trigger:
             logger.warning(f"Trigger: {kline.iloc[-1]['symbol']}")

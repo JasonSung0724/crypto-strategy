@@ -18,7 +18,7 @@ class Analyzer:
     def extend_indicator(
         self,
         data: pd.DataFrame,
-        indicator: dict[str, list[int]] = {"moving_average": [6, 48, 180], "fluctuation_rate": 24, "shadow_pct": [], "boolinger_band": [20]},
+        indicator: dict[str, list[int]] = {"moving_average": [6, 48, 180], "fluctuation_rate": 24, "shadow_pct": [], "boolinger_band": 20},
     ) -> pd.DataFrame:
         for k, v in indicator.items():
             if k == "moving_average":
@@ -31,7 +31,7 @@ class Analyzer:
                 data = self.boolinger_band(data, period=v)
         return data
 
-    def boolinger_band(self, kline: pd.DataFrame, period: list[int]) -> pd.DataFrame:
+    def boolinger_band(self, kline: pd.DataFrame, period: int) -> pd.DataFrame:
         cols = ["high", "low", "close", "open"]
         kline[cols] = kline[cols].apply(pd.to_numeric, errors="coerce")
         multiplier = 2
