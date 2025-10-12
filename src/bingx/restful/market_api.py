@@ -32,3 +32,9 @@ class MarketAPI:
         url = self.base.gen_url(path="/openApi/swap/v3/quote/klines", urlpa=params)
         response = RequestsHandler.get(url=url, headers=self.base.headers)
         return response
+
+    def open_interest(self, symbol: str):
+        params = {"symbol": symbol}
+        url = self.base.gen_url(path="/openApi/swap/v2/quote/openInterest", urlpa=params)
+        response = RequestsHandler.get(url=url, headers=self.base.headers)
+        return response

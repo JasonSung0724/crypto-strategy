@@ -55,3 +55,13 @@ class MarketData:
             msg = res["msg"] if "msg" in res else res
             logger.error(f"\nFailed to get kline\nCode :{res['code']}\nMessage :{msg}")
             raise ValueError(f"\nFailed to get kline\nCode :{res['code']}\nMessage :{msg}")
+
+    def get_open_interest(self, symbol: str):
+        res = self.bing.market.open_interest(symbol=symbol)
+        data = res["data"]
+        if "data" in data and data["code"] == 0:
+            return data["data"]
+        else:
+            msg = res["msg"] if "msg" in res else res
+            logger.error(f"\nFailed to get open interest\nCode :{res['code']}\nMessage :{msg}")
+            raise ValueError(f"\nFailed to get open interest\nCode :{res['code']}\nMessage :{msg}")

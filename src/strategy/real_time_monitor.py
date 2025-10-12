@@ -13,7 +13,7 @@ class RealTimeMonitor:
 
     def __init__(self, market_data: MarketData, symbols: list[str] = ["ALL"], notification: TelegramNotification = None):
         self.analyzer = Analyzer(market_data)
-        self.queue = Queue()
+        self.msg_queue = Queue()
         self.msg_handler = MessageHandle(self)
         self.market_data = market_data
         if symbols == ["ALL"]:
@@ -111,6 +111,6 @@ class RealTimeMonitor:
             channels_list.append(self.symbols[i : i + limit])
         for channels in channels_list:
             channels = [f"{channel}@kline_{kline_interval}" for channel in channels]
-            market_socket = MarketSocket(queue=self.queue, channels=channels)
+            market_socket = MarketSocket(queue=self.msg_queue, channels=channels)
             tasks.extend(market_socket.start())
         return tasks

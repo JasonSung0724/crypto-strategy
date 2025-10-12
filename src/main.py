@@ -5,7 +5,7 @@ import asyncio
 from src.bingx.services.market_data import MarketData
 from src.strategy.real_time_monitor import RealTimeMonitor
 from src.lib.notification import TelegramNotification
-
+import datetime
 
 logger.remove()
 log_format = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
@@ -33,6 +33,12 @@ BINGX_API_SECRET = os.getenv("BINGX_API_SECRET")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 
+async def heartbeat():
+    while True:
+        await asyncio.sleep(60)
+        logger.info("Alive")
+
+
 async def main():
     try:
         notification = TelegramNotification(token=TELEGRAM_BOT_TOKEN, chat_id="-1003146797346")
@@ -40,6 +46,7 @@ async def main():
         market = MarketData(api_key=BINGX_API_KEY, api_secret=BINGX_API_SECRET)
         strategy = RealTimeMonitor(market_data=market, notification=notification)
         tasks = await strategy.tasks_setup(kline_interval="15m")
+        tasks.append(heartbeat())
 
         await asyncio.gather(*tasks)
 
@@ -50,3 +57,13 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+
+# def main():
+#     market = MarketData(api_key=BINGX_API_KEY, api_secret=BINGX_API_SECRET)
+
+#     logger.info(market.get_open_interest(symbol="BTC-USDT"))
+
+
+# if __name__ == "__main__":
+#     main()

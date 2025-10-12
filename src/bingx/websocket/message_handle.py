@@ -21,6 +21,6 @@ class MessageHandle:
 
     async def start(self):
         while True:
-            message = await self.strategy.queue.get()
+            message = await self.strategy.msg_queue.get()
             await self.handler(json.loads(message))
             await asyncio.sleep(0)
