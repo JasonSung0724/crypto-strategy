@@ -57,7 +57,8 @@ class RealTimeMonitor:
                 df2 = self.analyzer.extend_indicator(df2, indicator=self.indicator)
                 notified = bool(df.iloc[-1]["notified"])
                 df2["notified"] = notified
-                df.iloc[[-1]].update(df2.iloc[[0]])
+                df = df.drop(index=df.index[-1])
+                df = pd.concat([df, df2])
             else:
                 df = df.drop(index=0)
                 df = pd.concat([df, pd.DataFrame([data])])

@@ -42,7 +42,7 @@ async def heartbeat():
 async def main():
     try:
         notification = TelegramNotification(token=TELEGRAM_BOT_TOKEN, chat_id="-1003146797346")
-        notification.send_message(message="Start monitoring")
+        # notification.send_message(message="Start monitoring")
         market = MarketData(api_key=BINGX_API_KEY, api_secret=BINGX_API_SECRET)
         strategy = RealTimeMonitor(market_data=market, notification=notification)
         tasks = await strategy.tasks_setup(kline_interval="15m")

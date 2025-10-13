@@ -34,6 +34,7 @@ def log_info(func):
         message = f"\n{"-"*20}\nMethod: {method}\nURL: {url}\nData: {data}\nHeaders: {headers}\n{"-"*20}"
         logger.info(message)
         return func(*args, **kwargs)
+
     return wrapper
 
 

@@ -18,6 +18,7 @@ class MessageHandle:
             high, low, close, open, volume, time = data["h"], data["l"], data["c"], data["o"], data["v"], data["T"]
             data = {"time": time, "open": open, "close": close, "high": high, "low": low, "volume": volume, "symbol": symbol, "interval": interval}
             await self.strategy.kline_data_recv(data)
+            await asyncio.sleep(0)
 
     async def start(self):
         while True:

@@ -4,6 +4,5 @@ crypto-venv/
 *.pyc
 __pycache__/
 .pytest_cache/
-/launch.json
 /data
 *.log.zip
